@@ -17,7 +17,11 @@ Vagrant.configure("2") do |config|
       vb.cpus = 4
       vb.memory = 4096
     end
+    node1.vm.provision :shell, :inline => <<-SCRIPT
+      yum install epel-release -y
+    SCRIPT
   end
+
   config.vm.define "node2" do |node2|
     node2.vm.hostname = "node2"
     node2.vm.network "private_network", ip: "192.168.99.201"
