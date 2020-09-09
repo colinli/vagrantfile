@@ -8,22 +8,20 @@ private_key = IO.read(private_key_path)
 public_key = IO.read(public_key_path)
 
 Vagrant.configure("2") do |config|
-  config.vm.define "centos6" do |centos6|
-    centos6.vm.box = "centos/6"
-    centos6.vm.hostname = "centos6"
-    centos6.vm.network "forwarded_port", guest: 22, host: 2206
-    centos6.vm.provision :shell, :inline => <<-SCRIPT
-      yum install epel-release -y
-    SCRIPT
+  config.vm.box = "bento/centos-7"
+  config.vm.define "node1" do |node1|
+    node1.vm.hostname = "node1"
+    node1.vm.network "private_network", ip: "192.168.99.101"
+    node1.vm.network "forwarded_port", guest: 22, host: 2201
+    node1.vm.provider "virtualbox" do |vb|
+      vb.cpus = 4
+      vb.memory = 4096
+    end
   end
-
-  config.vm.define "centos7" do |centos7|
-    centos7.vm.box = "centos/7"
-    centos7.vm.hostname = "centos7"
-    centos7.vm.network "forwarded_port", guest: 22, host: 2207
-    centos7.vm.provision :shell, :inline => <<-SCRIPT
-      yum install epel-release -y
-    SCRIPT
+  config.vm.define "node2" do |node2|
+    node2.vm.hostname = "node2"
+    node2.vm.network "private_network", ip: "192.168.99.201"
+    node2.vm.network "forwarded_port", guest: 22, host: 2202
   end
 
   config.ssh.insert_key = false
@@ -31,12 +29,11 @@ Vagrant.configure("2") do |config|
     private_key_path,
     insecure_key_path # to provision the first time
   ]
-
-  config.vm.provision :shell, :inline => <<-SCRIPT
+config.vm.provision :shell, :inline => <<-SCRIPT
     set -e
-    echo '#{private_key}' > /home/vagrant/.ssh/id_rsa
+echo '#{private_key}' > /home/vagrant/.ssh/id_rsa
     chmod 600 /home/vagrant/.ssh/id_rsa
-    echo '#{public_key}' > /home/vagrant/.ssh/authorized_keys
+echo '#{public_key}' > /home/vagrant/.ssh/authorized_keys
     chmod 600 /home/vagrant/.ssh/authorized_keys
   SCRIPT
 end
