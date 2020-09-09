@@ -1,0 +1,2 @@
+# vagrantfile
+Template for vagrant
