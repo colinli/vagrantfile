@@ -2,16 +2,19 @@
 # vi: set ft=ruby :
 
 # ========= Definations =============
-# SSH Key 
+# SSH Key
 use_own_key = true
 private_key_name = "id_rsa"
 public_key_name = "id_rsa.pub"
 
 # Custom privision script
-custom_script = "
+common_script = "
   echo Replace with your own script here
   echo by adding sudo for privileges
   echo and line by line"
+
+script1 = "echo script on node1"
+script2 = "echo script on node2"
 
 # VM spec
 default_box = "bento/centos-7"
@@ -23,12 +26,14 @@ nodes = {
      :box => default_box,
      :ip => "192.168.40.21",
      :mem => default_mem,
-     :cpus => default_cpus},
+     :cpus => default_cpus,
+     :script => script1},
   "worker" => {
      :box => default_box,
      :ip => "192.168.40.22",
      :mem => 512,
-     :cpus => default_cpus}
+     :cpus => default_cpus,
+     :script => script2}
 }
 
 plugins = ["vagrant-vbguest"]
@@ -55,6 +60,7 @@ Vagrant.configure('2') do |config|
         config.vm.box = spec[:box]
         override.vm.network :private_network, ip: spec[:ip]
         override.vm.hostname = hostname
+        override.vm.provision 'shell', inline: spec[:script]
         v.name = hostname
         v.memory = spec[:mem]
         v.cpus = spec[:cpus]
@@ -69,13 +75,13 @@ Vagrant.configure('2') do |config|
   config.ssh.insert_key = false
   config.ssh.private_key_path = [
     private_key_path,
-    insecure_key_path 
+    insecure_key_path
   ]
 
-# Provision 
+# Provision
   config.vm.provision 'shell', privileged: false, inline:
-    set_key if use_own_key 
+    set_key if use_own_key
 
   config.vm.provision 'shell', privileged: false, inline:
-    custom_script
-end #Vagrant 
+    common_script
+end #Vagrant
