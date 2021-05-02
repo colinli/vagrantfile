@@ -1,43 +1,81 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-private_key_path = File.join(Dir.home, ".ssh", "id_rsa")
-public_key_path = File.join(Dir.home, ".ssh", "id_rsa.pub")
+# ========= Definations =============
+# SSH Key 
+use_own_key = true
+private_key_name = "id_rsa"
+public_key_name = "id_rsa.pub"
+
+# Custom privision script
+custom_script = "
+  echo Replace with your own script here
+  echo by adding sudo for privileges
+  echo and line by line"
+
+# VM spec
+default_box = "bento/centos-7"
+default_cpus = 1
+default_mem = 1024
+
+nodes = {
+  "controller" => {
+     :box => default_box,
+     :ip => "192.168.40.21",
+     :mem => default_mem,
+     :cpus => default_cpus},
+  "worker" => {
+     :box => default_box,
+     :ip => "192.168.40.22",
+     :mem => 512,
+     :cpus => default_cpus}
+}
+
+plugins = ["vagrant-vbguest"]
+
+# ============= Don't Change below =============
+
+# Set ssh key
+private_key_path = File.join(Dir.home, ".ssh", private_key_name)
+public_key_path = File.join(Dir.home, ".ssh", public_key_name)
 insecure_key_path = File.join(Dir.home, ".vagrant.d", "insecure_private_key")
 private_key = IO.read(private_key_path)
 public_key = IO.read(public_key_path)
 
-Vagrant.configure("2") do |config|
-  config.vm.box = "bento/centos-7"
-  config.vm.define "node1" do |node1|
-    node1.vm.hostname = "node1"
-    node1.vm.network "private_network", ip: "192.168.99.101"
-    node1.vm.network "forwarded_port", guest: 22, host: 2201
-    node1.vm.provider "virtualbox" do |vb|
-      vb.cpus = 4
-      vb.memory = 4096
-    end
-    node1.vm.provision :shell, :inline => <<-SCRIPT
-      yum install epel-release -y
-    SCRIPT
-  end
+set_key = "set -e
+  echo Now setting up your own key
+  echo '#{public_key}' >> /home/vagrant/.ssh/authorized_keys
+  chmod 600 /home/vagrant/.ssh/authorized_keys"
 
-  config.vm.define "node2" do |node2|
-    node2.vm.hostname = "node2"
-    node2.vm.network "private_network", ip: "192.168.99.201"
-    node2.vm.network "forwarded_port", guest: 22, host: 2202
-  end
+
+Vagrant.configure('2') do |config|
+  nodes.each_with_index do | (hostname, spec), index|
+    config.vm.define hostname do |cfg|
+      cfg.vm.provider :virtualbox do |v, override|
+        config.vm.box = spec[:box]
+        override.vm.network :private_network, ip: spec[:ip]
+        override.vm.hostname = hostname
+        v.name = hostname
+        v.memory = spec[:mem]
+        v.cpus = spec[:cpus]
+      end #cfg
+    end # config
+
+    plugins.each do |plugin|
+      system "vagrant plugin install #{plugin}" unless Vagrant.has_plugin? plugin
+    end # plugins
+  end #nodes
 
   config.ssh.insert_key = false
   config.ssh.private_key_path = [
     private_key_path,
-    insecure_key_path # to provision the first time
+    insecure_key_path 
   ]
-config.vm.provision :shell, :inline => <<-SCRIPT
-    set -e
-echo '#{private_key}' > /home/vagrant/.ssh/id_rsa
-    chmod 600 /home/vagrant/.ssh/id_rsa
-echo '#{public_key}' > /home/vagrant/.ssh/authorized_keys
-    chmod 600 /home/vagrant/.ssh/authorized_keys
-  SCRIPT
-end
+
+# Provision 
+  config.vm.provision 'shell', privileged: false, inline:
+    set_key if use_own_key 
+
+  config.vm.provision 'shell', privileged: false, inline:
+    custom_script
+end #Vagrant 
