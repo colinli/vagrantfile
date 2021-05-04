@@ -20,6 +20,7 @@ script2 = "echo script on node2"
 default_box = "bento/centos-7"
 default_cpus = 1
 default_mem = 1024
+groups = "/temp" # "/grp1, grp2", or "/", or "/grp/subgrp"
 
 nodes = {
   "controller" => {
@@ -61,6 +62,7 @@ Vagrant.configure('2') do |config|
         override.vm.network :private_network, ip: spec[:ip]
         override.vm.hostname = hostname
         override.vm.provision 'shell', inline: spec[:script]
+        v.customize ["modifyvm", :id, "--groups", groups]
         v.name = hostname
         v.memory = spec[:mem]
         v.cpus = spec[:cpus]
