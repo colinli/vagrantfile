@@ -63,6 +63,7 @@ Vagrant.configure('2') do |config|
         override.vm.hostname = hostname
         override.vm.provision 'shell', inline: spec[:script]
         v.customize ["modifyvm", :id, "--groups", groups]
+        v.customize ["modifyvm", :id, "--description", Dir.pwd]
         v.name = hostname
         v.memory = spec[:mem]
         v.cpus = spec[:cpus]
