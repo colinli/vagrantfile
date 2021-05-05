@@ -53,6 +53,8 @@ set_key = "set -e
   echo '#{public_key}' >> /home/vagrant/.ssh/authorized_keys
   chmod 600 /home/vagrant/.ssh/authorized_keys"
 
+# Add creating tiem stamp to avoid name conflicting
+suffix = Time.new.strftime("%Y%m%d-%H%M%S")
 
 Vagrant.configure('2') do |config|
   nodes.each_with_index do | (hostname, spec), index|
@@ -64,7 +66,7 @@ Vagrant.configure('2') do |config|
         override.vm.provision 'shell', inline: spec[:script]
         v.customize ["modifyvm", :id, "--groups", groups]
         v.customize ["modifyvm", :id, "--description", Dir.pwd]
-        v.name = hostname
+        v.name = "#{hostname}-#{suffix}"
         v.memory = spec[:mem]
         v.cpus = spec[:cpus]
       end #cfg
