@@ -61,6 +61,7 @@ Vagrant.configure('2') do |config|
     config.vm.define hostname do |cfg|
       cfg.vm.provider :virtualbox do |v, override|
         config.vm.box = spec[:box]
+        config.vm.synced_folder ".", "/vagrant", disabled: true
         override.vm.network :private_network, ip: spec[:ip]
         override.vm.hostname = hostname
         override.vm.provision 'shell', inline: spec[:script]
